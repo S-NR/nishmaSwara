@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Welcome | nishmaSware</title>  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="overlay_startUp">
+    <h1>Welcome to nishmaSwara</h1>
+    <p>
+      Where every note finds a voice.
+    </p>
+    <p>
+    </p>
+    <h2>Explore Now</h2>
+
+    <!-- Search Box with Dropdown -->
+    <div id="search-box">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search..."
+        oninput="showSuggestions()"
+        onfocus="showSuggestions()" /> <!-- ✅ Added onfocus here -->
+      <div id="suggestions"></div>
+    </div>
+  </div>
+
+  <script>
+    const pages = [
+      { name: "Memory Computation", file: "memory_computation.html" },      
+    ];
+
+    function showSuggestions() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const suggestionBox = document.getElementById("suggestions");
+      suggestionBox.innerHTML = '';
+
+      let matches;
+
+      if (input === '') {
+        const label = document.createElement('div');
+        label.textContent = 'Popular Topics';
+        label.style.fontWeight = 'bold';
+        label.style.backgroundColor = '#eee';
+        label.style.color = '#333';
+        label.style.padding = '8px';
+        suggestionBox.appendChild(label);
+
+        matches = pages.slice(0, 5); // Show first 5 items
+      } else {
+        matches = pages.filter(page => page.name.toLowerCase().includes(input));
+      }
+
+      if (matches.length === 0) {
+        suggestionBox.style.display = 'none';
+        return;
+      }
+
+      matches.forEach(match => {
+        const div = document.createElement('div');
+        div.textContent = match.name;
+        div.onclick = () => {
+          window.location.href = match.file;
+        };
+        suggestionBox.appendChild(div);
+      });
+
+      suggestionBox.style.display = 'block';
+    }
+
+    // ✅ Optional: Hide suggestions when clicking outside
+    document.addEventListener('click', (event) => {
+      const searchBox = document.getElementById("search-box");
+      const suggestions = document.getElementById("suggestions");
+      if (!searchBox.contains(event.target)) {
+        suggestions.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
