@@ -40,6 +40,26 @@
       color: #444;
       margin-left: 15px;
     }
+    .submit-box {
+      margin-top: 40px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: center;
+    }
+    button {
+      background-color: #0a9396;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #007f81;
+    }
   </style>
 </head>
 <body>
@@ -72,6 +92,23 @@
       pa... da... ni... sa...</p>
   </div>
 
+  <!-- ✅ Submit Section -->
+  <div class="submit-box">
+    <h2>Submit Your Practice</h2>
+    <form onsubmit="completeDay1(); return false;">
+      <input type="file" accept="audio/*,video/*" required><br><br>
+      <button type="submit">Submit & Unlock Day 2</button>
+    </form>
+  </div>
+
+  <script>
+    function completeDay1() {
+      // Mark Day 1 as complete
+      localStorage.setItem("day1_completed", "true");
+      alert("Your practice has been submitted! ✅ You can now access Day 2.");
+      window.location.href = "Day2.html"; // redirect to Day 2
+    }
+  </script>
+
 </body>
 </html>
-        
