@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Piano C4–C6</title>
+  <title>Virtual Piano (C4–C6)</title>
   <style>
     body {
       display: flex;
@@ -11,29 +11,20 @@
       align-items: center;
       height: 100vh;
       background: #111;
-      margin: 0;
     }
-
     .piano {
-      display: flex;
       position: relative;
+      display: flex;
     }
-
     .white-key {
       width: 60px;
-      height: 240px;
+      height: 250px;
       background: white;
-      border: 1px solid black;
-      border-radius: 0 0 6px 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-      z-index: 1;
+      border: 1px solid #333;
+      box-sizing: border-box;
       position: relative;
+      z-index: 1;
     }
-
-    .white-key:active {
-      background: #ddd;
-    }
-
     .black-key {
       width: 40px;
       height: 150px;
@@ -41,10 +32,10 @@
       position: absolute;
       margin-left: -20px;
       z-index: 2;
-      border-radius: 0 0 4px 4px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.7);
     }
-
+    .white-key:active {
+      background: #ddd;
+    }
     .black-key:active {
       background: #444;
     }
@@ -56,87 +47,85 @@
   <script>
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Frequencies (Equal Temperament) from C4 to C6
+    // Frequencies for C4 to C6
     const notes = [
-      {name:"C4", freq:261.63},
-      {name:"C#4", freq:277.18},
-      {name:"D4", freq:293.66},
-      {name:"D#4", freq:311.13},
-      {name:"E4", freq:329.63},
-      {name:"F4", freq:349.23},
-      {name:"F#4", freq:369.99},
-      {name:"G4", freq:392.00},
-      {name:"G#4", freq:415.30},
-      {name:"A4", freq:440.00},
-      {name:"A#4", freq:466.16},
-      {name:"B4", freq:493.88},
-
-      {name:"C5", freq:523.25},
-      {name:"C#5", freq:554.37},
-      {name:"D5", freq:587.33},
-      {name:"D#5", freq:622.25},
-      {name:"E5", freq:659.25},
-      {name:"F5", freq:698.46},
-      {name:"F#5", freq:739.99},
-      {name:"G5", freq:783.99},
-      {name:"G#5", freq:830.61},
-      {name:"A5", freq:880.00},
-      {name:"A#5", freq:932.33},
-      {name:"B5", freq:987.77},
-
-      {name:"C6", freq:1046.50}
+      { name: 'C4',  freq: 261.63 },
+      { name: 'C#4', freq: 277.18 },
+      { name: 'D4',  freq: 293.66 },
+      { name: 'D#4', freq: 311.13 },
+      { name: 'E4',  freq: 329.63 },
+      { name: 'F4',  freq: 349.23 },
+      { name: 'F#4', freq: 369.99 },
+      { name: 'G4',  freq: 392.00 },
+      { name: 'G#4', freq: 415.30 },
+      { name: 'A4',  freq: 440.00 },
+      { name: 'A#4', freq: 466.16 },
+      { name: 'B4',  freq: 493.88 },
+      { name: 'C5',  freq: 523.25 },
+      { name: 'C#5', freq: 554.37 },
+      { name: 'D5',  freq: 587.33 },
+      { name: 'D#5', freq: 622.25 },
+      { name: 'E5',  freq: 659.25 },
+      { name: 'F5',  freq: 698.46 },
+      { name: 'F#5', freq: 739.99 },
+      { name: 'G5',  freq: 783.99 },
+      { name: 'G#5', freq: 830.61 },
+      { name: 'A5',  freq: 880.00 },
+      { name: 'A#5', freq: 932.33 },
+      { name: 'B5',  freq: 987.77 },
+      { name: 'C6',  freq: 1046.50 }
     ];
 
-    const piano = document.getElementById("piano");
+    const piano = document.getElementById('piano');
 
-    let whiteKeyIndex = 0;
+    // Layout: which notes are white vs black
+    const whiteNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    let whiteIndex = 0;
+
     notes.forEach((note, i) => {
-      if (note.name.includes("#")) {
-        // Black key
-        const blackKey = document.createElement("div");
-        blackKey.className = "black-key";
-        blackKey.style.left = `${whiteKeyIndex * 60}px`;
+      const isSharp = note.name.includes('#');
+      if (!isSharp) {
+        // Create white key
+        const key = document.createElement('div');
+        key.className = 'white-key';
+        key.dataset.freq = note.freq;
+        piano.appendChild(key);
 
-        blackKey.addEventListener("mousedown", () => playNote(note.freq));
-        blackKey.addEventListener("mouseup", stopNote);
-        piano.appendChild(blackKey);
-      } else {
-        // White key
-        const whiteKey = document.createElement("div");
-        whiteKey.className = "white-key";
+        // Place black key if next note is sharp
+        if (i < notes.length - 1 && notes[i+1].name.includes('#')) {
+          const blackKey = document.createElement('div');
+          blackKey.className = 'black-key';
+          blackKey.dataset.freq = notes[i+1].freq;
+          blackKey.style.left = (whiteIndex * 60 + 45) + 'px';
+          piano.appendChild(blackKey);
+        }
 
-        whiteKey.addEventListener("mousedown", () => playNote(note.freq));
-        whiteKey.addEventListener("mouseup", stopNote);
-        piano.appendChild(whiteKey);
-
-        whiteKeyIndex++;
+        whiteIndex++;
       }
     });
 
-    let oscillator;
-    function playNote(freq) {
-      stopNote(); // stop previous if any
-      oscillator = audioCtx.createOscillator();
+    // Play sound
+    function playSound(freq) {
+      const osc = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
 
-      oscillator.type = "sine"; // smooth tone
-      oscillator.frequency.value = freq;
+      osc.type = 'sine'; // smooth tone
+      osc.frequency.value = freq;
 
-      // Slight fade-in/fade-out for smoothness
-      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
 
-      oscillator.connect(gainNode).connect(audioCtx.destination);
-      oscillator.start();
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // soft volume
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1); // play 1 sec
     }
 
-    function stopNote() {
-      if (oscillator) {
-        oscillator.stop();
-        oscillator.disconnect();
-        oscillator = null;
+    // Event listeners
+    piano.addEventListener('mousedown', e => {
+      if (e.target.dataset.freq) {
+        playSound(e.target.dataset.freq);
       }
-    }
+    });
   </script>
 </body>
 </html>
