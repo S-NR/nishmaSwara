@@ -1,131 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Virtual Piano (C4–C6)</title>
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #111;
-    }
-    .piano {
-      position: relative;
-      display: flex;
-    }
-    .white-key {
-      width: 60px;
-      height: 250px;
-      background: white;
-      border: 1px solid #333;
-      box-sizing: border-box;
-      position: relative;
-      z-index: 1;
-    }
-    .black-key {
-      width: 40px;
-      height: 150px;
-      background: black;
-      position: absolute;
-      margin-left: -20px;
-      z-index: 2;
-    }
-    .white-key:active {
-      background: #ddd;
-    }
-    .black-key:active {
-      background: #444;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Day 2: Chords Practice</title>
+<style>
+:root{
+--bg:#0f1220; --card:#161a2e; --ink:#e8ecff; --muted:#a9b0d9; --accent:#7aa2ff; --good:#34d399; --warn:#f59e0b; --bad:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",sans-serif;background:linear-gradient(180deg,#0b1022,#121736);color:var(--ink);}
+.wrap{max-width:1100px;margin:auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-size:clamp(20px,4vw,36px);margin:0}
+.badge{font-size:12px;background:#1c2140;color:var(--muted);padding:6px 10px;border-radius:999px;border:1px solid #28305f}
+
+
+.card{background:var(--card);border:1px solid #1e2446;border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.col{flex:1 1 340px}
+
+  /* PIANO */
+.piano{position:relative;height:200px;user-select:none;border-radius:14px;overflow:hidden;border:1px solid #232a52;background:linear-gradient(#e9eefc,#cfd9ff)}
+.key{position:absolute;bottom:0;border:1px solid #9ca3c7;border-bottom:none;border-radius:0 0 10px 10px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-size:12px;cursor:pointer;transition:transform .02s}
+.key.white{width:calc(100%/14);top:0;background:linear-gradient(#fbfdff,#e3e9ff)}
+.key.black{width:calc(100%/21);height:60%;background:linear-gradient(#111,#333);color:#fff;border-color:#000;z-index:2}
+.key:active,.key.playing{transform:translateY(1px);filter:brightness(0.95)}
+
+
+.labels{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-top:10px}
+.labels .chip{background:#1b2142;border:1px solid #2a3261;border-radius:999px;padding:8px 10px;text-align:center}
+.labels small{display:block;color:var(--muted);font-size:11px}
+
+
+.btn{appearance:none;border:none;border-radius:12px;padding:10px 14px;background:#23306a;color:#fff;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:#1b2142;color:var(--ink);border:1px solid #2a3261}
+
+
+.grid-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.pill{background:#172042;border:1px solid #2a3261;border-radius:14px;padding:10px}
+.status{font-weight:700}
+</style>
 </head>
 <body>
-  <div class="piano" id="piano"></div>
+<div class="wrap">
+<header>
+<h1>Day 2: Chords Practice</h1>
+<span class="badge">Sargam ↔ Western | Interactive</span>
+</header>
 
-  <script>
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // Frequencies for C4 to C6
-    const notes = [
-      { name: 'C4',  freq: 261.63 },
-      { name: 'C#4', freq: 277.18 },
-      { name: 'D4',  freq: 293.66 },
-      { name: 'D#4', freq: 311.13 },
-      { name: 'E4',  freq: 329.63 },
-      { name: 'F4',  freq: 349.23 },
-      { name: 'F#4', freq: 369.99 },
-      { name: 'G4',  freq: 392.00 },
-      { name: 'G#4', freq: 415.30 },
-      { name: 'A4',  freq: 440.00 },
-      { name: 'A#4', freq: 466.16 },
-      { name: 'B4',  freq: 493.88 },
-      { name: 'C5',  freq: 523.25 },
-      { name: 'C#5', freq: 554.37 },
-      { name: 'D5',  freq: 587.33 },
-      { name: 'D#5', freq: 622.25 },
-      { name: 'E5',  freq: 659.25 },
-      { name: 'F5',  freq: 698.46 },
-      { name: 'F#5', freq: 739.99 },
-      { name: 'G5',  freq: 783.99 },
-      { name: 'G#5', freq: 830.61 },
-      { name: 'A5',  freq: 880.00 },
-      { name: 'A#5', freq: 932.33 },
-      { name: 'B5',  freq: 987.77 },
-      { name: 'C6',  freq: 1046.50 }
-    ];
+<!-- Keyboard + Sargam mapping -->
+<section class="card">
+<h2 style="margin-top:0">Interactive Keyboard</h2>
+<div id="piano" class="piano" aria-label="Piano keyboard (C4 to C5)"></div>
+<div class="labels">
+<div class="chip">Sa <small>C</small></div>
+<div class="chip">Re <small>D</small></div>
+<div class="chip">Ga <small>E</small></div>
+<div class="chip">Ma <small>F</small></div>
+<div class="chip">Pa <small>G</small></div>
+<div class="chip">Dha <small>A</small></div>
+<div class="chip">Ni <small>B</small></div>
+<div class="chip">Sa′ <small>C (high)</small></div>
+</div>
+<p style="color:var(--muted);margin-top:10px">Click keys to hear notes. Hold <kbd>Shift</kbd> on desktop to sustain.</p>
+</section>
 
-    const piano = document.getElementById('piano');
 
-    // Layout: which notes are white vs black
-    const whiteNotes = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    let whiteIndex = 0;
+<!-- Chords section -->
+<section class="card">
+<div class="row">
+<div class="col">
+<h2 style="margin-top:0">Essential Triads (Key of C)</h2>
+<div class="grid-buttons" id="chordButtons"></div>
+<p class="pill" style="margin-top:10px">Tip: Major = <strong>Sa–Ga–Pa</strong> (C–E–G). Minor = <strong>Sa–Ma–Pa</strong> (D–F–A for D minor, etc.). Diminished = <strong>Sa–Ma–Pa♭</strong>.</p>
+</div>
+<div class="col">
+<h2 style="margin-top:0">Identify the Pitch</h2>
+<div class="pill">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<button class="btn" id="playRandomNote">Play Random Note</button>
+<button class="btn ghost" id="replayNote" disabled>Replay</button>
+<span class="status" id="quizStatus"></span>
+</div>
+<p style="color:var(--muted);margin:8px 0 0">After playing, click the correct key on the keyboard. Your score will appear here.</p>
+</div>
+<p style="margin-top:10px;color:var(--muted)">Pitches in this page: C, C♯/D♭, D, D♯/E♭, E, F, F♯/G♭, G, G♯/A♭, A, A♯/B♭, B.</p>
+</div>
+</div>
 
-    notes.forEach((note, i) => {
-      const isSharp = note.name.includes('#');
-      if (!isSharp) {
-        // Create white key
-        const key = document.createElement('div');
-        key.className = 'white-key';
-        key.dataset.freq = note.freq;
-        piano.appendChild(key);
+  </section>
 
-        // Place black key if next note is sharp
-        if (i < notes.length - 1 && notes[i+1].name.includes('#')) {
-          const blackKey = document.createElement('div');
-          blackKey.className = 'black-key';
-          blackKey.dataset.freq = notes[i+1].freq;
-          blackKey.style.left = (whiteIndex * 60 + 45) + 'px';
-          piano.appendChild(blackKey);
-        }
 
-        whiteIndex++;
-      }
-    });
+<section class="card">
+<h2 style="margin-top:0">Practice Ideas</h2>
+<ol>
+<li>Play the <strong>Sa–Pa–Sa′</strong> drone (C–G–C) slowly, listen for stability.</li>
+<li>Arpeggiate each triad up and down (e.g., C–E–G–E).</li>
+<li>Sing <em>Sa Re Ga Ma Pa Dha Ni Sa</em> while playing the corresponding keys.</li>
+</ol>
+</section>
+</div>
 
-    // Play sound
-    function playSound(freq) {
-      const osc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
 
-      osc.type = 'sine'; // smooth tone
-      osc.frequency.value = freq;
+<script>
+// ------- Audio helpers -------
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-      osc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
 
-      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // soft volume
-      osc.start();
-      osc.stop(audioCtx.currentTime + 1); // play 1 sec
-    }
+function freqFromSemis(base, semis){return base * Math.pow(2, semis/12)}
 
-    // Event listeners
-    piano.addEventListener('mousedown', e => {
-      if (e.target.dataset.freq) {
-        playSound(e.target.dataset.freq);
-      }
-    });
-  </script>
+
+// Reference: A4 = 440 Hz, C4 is -9 semitones from A4
+const A4 = 440;
+const C4 = freqFromSemis(A4, -9);
+  // Layout: C4..B4 plus C5 (13 white notes / 12 semitone steps)
+const noteOrder = [
+{n:"C4", sargam:"Sa"}, {n:"C#4", alt:"Db4"}, {n:"D4", sargam:"Re"}, {n:"D#4", alt:"Eb4"},
+{n:"E4", sargam:"Ga"}, {n:"F4", sargam:"Ma"}, {n:"F#4", alt:"Gb4"}, {n:"G4", sargam:"Pa"},
+{n:"G#4", alt:"Ab4"}, {n:"A4", sargam:"Dha"}, {n:"A#4", alt:"Bb4"}, {n:"B4", sargam:"Ni"}, {n:"C5", sargam:"Sa′"}
+];
+
+
+// Compute frequencies relative to C4
+const semisFromC = [0,1,2,3,4,5,6,7,8,9,10,11,12];
+const notes = noteOrder.map((o,i)=>({
+...o,
+idx:i,
+freq: freqFromSemis(C4, semisFromC[i])
+}));
+
+
+// ------- Build keyboard -------
+const piano = document.getElementById('piano');
+
+
+// positions for white keys (14 columns for C..C)
+const whiteOrder = [0,2,4,5,7,9,11,12]; // indices of white keys from notes
+
+
+// Build white keys first
+  whiteOrder.forEach((i,wi)=>{
+const n = notes[i];
+const el = document.createElement('div');
+el.className = 'key white';
+el.style.left = `calc(${wi} * (100%/14))`;
+el.style.width = 'calc(100%/14)';
+el.dataset.noteIndex = i;
+el.innerHTML = `<div>${n.sargam? n.sargam+"<br><small>"+n.n.replace(/[0-9]/g,'')+"</small>": n.n}</div>`;
+piano.appendChild(el);
+});
+
+
+// Map black key positions between whites
+const blackMap = {1:0.66, 3:1.66, 6:3.66, 8:4.66, 10:5.66};
+Object.entries(blackMap).forEach(([i,pos])=>{
+const n = notes[+i];
+const el = document.createElement('div');
+el.className = 'key black';
+el.style.left = `calc(${pos} * (100%/14))`;
+el.dataset.noteIndex = +i;
+el.textContent = n.n.replace(/[0-9]/g,'');
+piano.appendChild(el);
+});
+
+  // play utilities
+function playFreq(freq, duration=0.6){
+const now = audioCtx.currentTime;
+const o = audioCtx.createOscillator();
+const g = audioCtx.createGain();
+o.type = 'sine';
+o.frequency.value = freq;
+o.connect(g); g.connect(audioCtx.destination);
+// simple ADSR-ish envelope
+g.gain.setValueAtTime(0, now);
+g.gain.linearRampToValueAtTime(0.9, now+0.02);
+const sustain = (window._sustain? 1.2 : 0.4);
+g.gain.setTargetAtTime(0.0001, now + sustain, 0.25);
+o.start(now); o.stop(now + sustain + 0.6);
+return {o,g};
+}
+
+
+function playChord(freqs){ freqs.forEach((f,i)=> setTimeout(()=>playFreq(f,0.8), i*20)); }
+
+
+function keyDown(el){ el.classList.add('playing'); setTimeout(()=>el.classList.remove('playing'), 120); }
+
+  piano.addEventListener('mousedown', e=>{
+const key = e.target.closest('.key'); if(!key) return;
+const idx = +key.dataset.noteIndex; if(Number.isNaN(idx)) return;
+keyDown(key); playFreq(notes[idx].freq);
+if(activeQuiz && quizAnswer === idx){ score++; quizFlash('Correct!', 'good'); activeQuiz=false; updateButtons(); }
+else if(activeQuiz){ quizFlash('Try again', 'bad'); }
+});
+
+
+// sustain with Shift key
+window.addEventListener('keydown', e=>{ if(e.key==='Shift') window._sustain = true; });
+window.addEventListener('keyup', e=>{ if(e.key==='Shift') window._sustain = false; });
+
+
+// ------- Chord buttons -------
+const chordDefs = [
+{name:'C Major (Sa–Ga–Pa)', tones:['C4','E4','G4']},
+{name:'D Minor (Re–Ma–Pa)', tones:['D4','F4','A4']},
+{name:'E Minor', tones:['E4','G4','B4']},
+{name:'F Major', tones:['F4','A4','C5']},
+{name:'G Major', tones:['G4','B4','D4']},
+{name:'A Minor', tones:['A4','C4','E4']},
+{name:'B Dim', tones:['B4','D4','F4']},
+{name:'Sa–Pa–Sa′ Drone', tones:['C4','G4','C5']},
+];
+
+  const byName = Object.fromEntries(notes.map(n=>[n.n,n]));
+const chordButtons = document.getElementById('chordButtons');
+chordDefs.forEach(ch=>{
+const b = document.createElement('button');
+b.className='btn'; b.textContent=ch.name; b.style.whiteSpace='nowrap';
+b.onclick = ()=>{ const freqs = ch.tones.map(t=>byName[t].freq); playChord(freqs); };
+chordButtons.appendChild(b);
+});
+
+
+// ------- Pitch quiz -------
+let activeQuiz=false, quizAnswer=null, score=0, total=0, lastIdx=null, lastOscs=null;
+const playBtn = document.getElementById('playRandomNote');
+const replayBtn = document.getElementById('replayNote');
+const statusEl = document.getElementById('quizStatus');
+
+
+function quizFlash(msg, type){
+statusEl.textContent = `${msg} • Score ${score}/${total}`;
+statusEl.style.color = type==='good'? 'var(--good)': type==='bad'? 'var(--bad)': 'var(--ink)';
+}
+
+  function startQuiz(){
+const pool = notes.map((_,i)=>i);
+let idx = pool[Math.floor(Math.random()*pool.length)];
+if(idx===lastIdx) idx = (idx+1)%pool.length; // avoid repeat
+lastIdx = idx; quizAnswer = idx; activeQuiz=true; total++;
+const p = playFreq(notes[idx].freq); lastOscs=p; updateButtons(); quizFlash('Which note is this?', 'warn');
+}
+
+
+function replay(){ if(!lastIdx) return; playFreq(notes[lastIdx].freq); }
+
+
+function updateButtons(){ replayBtn.disabled = !activeQuiz; }
+
+
+playBtn.addEventListener('click', startQuiz);
+replayBtn.addEventListener('click', replay);
+</script>
 </body>
 </html>
